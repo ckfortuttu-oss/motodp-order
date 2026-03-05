@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>motoDP | Order Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --yellow:#F5C800; --dark:#1A1A1A; --light-bg:#F8F7F2; --border:#E0DDD4; --muted:#888; --green:#2D7A3A; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Barlow',sans-serif; background:var(--light-bg); color:#2D2D2D; min-height:100vh; }
+  header { background:var(--dark); padding:18px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 20px rgba(0,0,0,0.35); }
+  header .logo { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:800; color:#fff; }
+  header .logo span { color:var(--yellow); }
+  header .tag { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:3px; color:var(--yellow); text-transform:uppercase; }
+  .main { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
+  .section-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--dark); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:2px; background:var(--yellow); }
+  .customer-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:32px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:22px; }
+  .field { display:flex; flex-direction:column; gap:5px; }
+  .field label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  .field input { border:1.5px solid var(--border); border-radius:3px; padding:9px 13px; font-family:'Barlow',sans-serif; font-size:14px; color:var(--dark); background:var(--light-bg); transition:border-color 0.2s; outline:none; }
+  .field input:focus { border-color:var(--yellow); background:#fff; }
+
+  /* TIER PANEL */
+  .tier-panel { background:#fff; border:1px solid var(--border); border-radius:6px; padding:20px 22px; margin-bottom:28px; }
+  .tier-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .tier-panel-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#666; }
+  .active-tier-badge { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:800; padding:5px 18px; border-radius:20px; letter-spacing:1px; transition:all 0.35s; }
+  .tier-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .tier-card { border:2px solid var(--border); border-radius:6px; padding:13px 14px; transition:all 0.3s; background:#fafaf7; }
+  .tier-card.t0.active-card { border-color:#A0AEC0; background:#F7FAFC; box-shadow:0 4px 14px rgba(0,0,0,0.1); }
+  .tier-card.t1.active-card { border-color:#38A169; background:#F0FFF4; box-shadow:0 4px 14px rgba(56,161,105,0.15); }
+  .tier-card.t2.active-card { border-color:#3182CE; background:#EBF8FF; box-shadow:0 4px 14px rgba(49,130,206,0.15); }
+  .tier-card.t3.active-card { border-color:#6B46C1; background:#FAF5FF; box-shadow:0 4px 14px rgba(107,70,193,0.15); }
+  .tier-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+  .tier-card-label { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; color:#bbb; transition:color 0.3s; }
+  .tier-card.t0.active-card .tier-card-label { color:#4A5568; }
+  .tier-card.t1.active-card .tier-card-label { color:#276749; }
+  .tier-card.t2.active-card .tier-card-label { color:#2B6CB0; }
+  .tier-card.t3.active-card .tier-card-label { color:#553C9A; }
+  .checkmark { font-size:15px; opacity:0; transition:opacity 0.3s; }
+  .tier-card.active-card .checkmark { opacity:1; }
+  .tier-card.t0.active-card .checkmark { color:#4A5568; }
+  .tier-card.t1.active-card .checkmark { color:#276749; }
+  .tier-card.t2.active-card .checkmark { color:#2B6CB0; }
+  .tier-card.t3.active-card .checkmark { color:#553C9A; }
+  .tier-card-roi { font-size:11px; font-weight:600; color:#bbb; margin-bottom:10px; transition:color 0.3s; }
+  .tier-card.active-card .tier-card-roi { color:var(--muted); }
+  .prog-row { margin-bottom:7px; }
+  .prog-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+  .prog-label { font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#ccc; transition:color 0.3s; }
+  .tier-card.active-card .prog-label { color:var(--muted); }
+  .prog-count { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; color:#ccc; transition:color 0.3s; }
+  .tier-card.active-card .prog-count { color:#555; }
+  .prog-track { height:5px; background:#eee; border-radius:3px; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:3px; transition:width 0.4s cubic-bezier(0.34,1.1,0.64,1); width:0%; }
+  .t0 .prog-fill { background:#A0AEC0; } .t1 .prog-fill { background:#48BB78; }
+  .t2 .prog-fill { background:#4299E1; } .t3 .prog-fill { background:#9F7AEA; }
+  .prog-fill.done { background:var(--yellow) !important; }
+  .or-divider { font-size:9px; font-weight:800; letter-spacing:1px; color:#ddd; text-align:center; margin:4px 0; transition:color 0.3s; }
+  .tier-card.active-card .or-divider { color:#bbb; }
+  .next-tier-hint { margin-top:14px; padding:10px 14px; background:#FFFBEB; border:1px solid #F6E05E; border-radius:4px; font-size:12px; color:#744210; display:none; }
+
+  /* PRODUCT TABLE */
+  .product-table-wrap { background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; margin-bottom:24px; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:var(--dark); }
+  thead th { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#fff; padding:11px 14px; text-align:left; }
+  thead th.num { text-align:right; }
+  .cat-row td { background:var(--yellow); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--dark); padding:7px 14px; }
+  tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+  tbody tr:hover { background:#FAFAF7; }
+  tbody tr:last-child { border-bottom:none; }
+  td { padding:9px 14px; font-size:14px; }
+  td.sku { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; }
+  td.mrp { font-size:12px; color:var(--muted); text-align:right; }
+  td.dp { font-weight:700; color:var(--green); text-align:right; }
+  td.subtotal { font-weight:700; text-align:right; }
+  .qty-input { width:68px; border:1.5px solid var(--border); border-radius:3px; padding:6px 8px; font-family:'Barlow',sans-serif; font-size:14px; text-align:center; outline:none; transition:border-color 0.2s; }
+  .qty-input:focus { border-color:var(--yellow); }
+  @keyframes dpFlash { 0%{background:#FFFDE7;} 100%{background:transparent;} }
+  .dp-flash { animation:dpFlash 0.55s ease; border-radius:3px; }
+
+  /* SUMMARY */
+  .summary-box { background:var(--dark); color:#fff; border-radius:4px; padding:20px 24px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
+  .summary-item { text-align:center; }
+  .summary-item .lbl { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#aaa; margin-bottom:3px; }
+  .summary-item .val { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:800; color:var(--yellow); }
+  .summary-item .val.w { color:#fff; }
+  .summary-item .note { font-size:10px; color:#666; margin-top:2px; }
+
+  .warning-msg { background:#FFF3CD; border:1px solid #F5C800; border-radius:4px; padding:10px 14px; font-size:13px; color:#7D5A00; margin-bottom:14px; display:none; }
+  .terms { background:#fff; border:1px solid var(--border); border-radius:4px; padding:16px 20px; margin-bottom:24px; font-size:12px; color:var(--muted); line-height:1.8; }
+  .terms strong { color:var(--dark); }
+  .terms ol { padding-left:16px; }
+
+  /* BUTTON */
+  .submit-btn { width:100%; padding:18px; background:var(--yellow); color:var(--dark); border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; letter-spacing:3px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .submit-btn:hover { background:#e0b800; transform:translateY(-1px); box-shadow:0 4px 20px rgba(245,200,0,0.4); }
+  .submit-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; transform:none; box-shadow:none; }
+  .spinner { width:22px; height:22px; border:3px solid rgba(0,0,0,0.15); border-top-color:#1A1A1A; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:999; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#fff; border-radius:8px; padding:40px; max-width:500px; width:92%; text-align:center; animation:popIn 0.3s ease; }
+  @keyframes popIn { from{transform:scale(0.85);opacity:0;} to{transform:scale(1);opacity:1;} }
+  .modal .icon { font-size:52px; margin-bottom:12px; }
+  .modal h2 { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:800; margin-bottom:8px; }
+  .modal .po-chip { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--dark); background:var(--light-bg); border:2px solid var(--yellow); padding:7px 22px; border-radius:4px; margin:12px auto; display:inline-block; letter-spacing:3px; }
+  .modal p { font-size:14px; color:var(--muted); line-height:1.7; }
+  .modal .steps { margin:16px 0; text-align:left; background:#f8f8f8; border-radius:6px; padding:14px 18px; }
+  .modal .steps li { font-size:13px; color:#444; margin-bottom:6px; line-height:1.5; }
+  .modal .steps li:last-child { margin-bottom:0; }
+  .modal .btn-row { margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .modal .close-btn { padding:11px 28px; background:var(--yellow); border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; cursor:pointer; letter-spacing:1px; }
+  .modal .preview-btn { padding:11px 24px; background:var(--dark); color:#fff; border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; cursor:pointer; letter-spacing:1px; }
+
+  /* EMAIL PREVIEW PANEL */
+  .email-preview-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1100; align-items:flex-start; justify-content:center; overflow-y:auto; padding:30px 16px; }
+  .email-preview-overlay.open { display:flex; }
+  .email-preview-wrap { background:#e8e8e8; border-radius:8px; width:100%; max-width:660px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .email-chrome { background:#d0d0d0; padding:10px 16px; display:flex; align-items:center; gap:8px; }
+  .email-chrome-dot { width:12px; height:12px; border-radius:50%; }
+  .email-chrome-title { font-size:13px; font-weight:600; color:#555; margin-left:8px; flex:1; text-align:center; }
+  .email-body-wrap { background:#f0eeea; padding:20px; }
+  .email-close-btn { position:sticky; top:10px; float:right; z-index:10; margin-bottom:10px; padding:8px 20px; background:var(--yellow); color:var(--dark); border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:1px; }
+
+  @media(max-width:700px){ .customer-grid{grid-template-columns:1fr;} .tier-cards{grid-template-columns:1fr 1fr;} .summary-box{justify-content:center;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">moto<span>DP</span></div>
+  <div class="tag">RT &amp; WS &middot; Order Sheet</div>
+  <div style="color:#888;font-size:12px;" id="validityHeader">Loading...</div>
+</header>
+
+<div class="main">
+
+  <div class="section-title">Customer Details</div>
+  <div class="customer-grid">
+    <div class="field"><label>Contact Person Name</label><input type="text" id="personName" placeholder="e.g. Ramesh Kumar"></div>
+    <div class="field"><label>Store / Shop Name</label><input type="text" id="storeName" placeholder="e.g. Ramesh Auto Works"></div>
+    <div class="field"><label>WhatsApp Number</label><input type="tel" id="whatsapp" placeholder="10-digit mobile" maxlength="10"></div>
+    <div class="field"><label>PIN Code</label><input type="text" id="pincode" placeholder="6-digit PIN" maxlength="6" oninput="lookupPin(this.value)"></div>
+  </div>
+
+  <div class="section-title">Pricing Tier</div>
+  <div class="tier-panel">
+    <div class="tier-panel-header">
+      <div class="tier-panel-title">Auto-selected as you add quantities</div>
+      <div class="active-tier-badge" id="activeTierBadge" style="background:#CBD5E0;color:#4A5568;">R0 &middot; 25% ROI</div>
+    </div>
+    <div class="tier-cards">
+      <div class="tier-card t0 active-card" id="card0">
+        <div class="tier-card-header"><div class="tier-card-label">R0</div><div class="checkmark">&#10003;</div></div>
+        <div class="tier-card-roi">25% ROI / Mark-up</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Retail (100ml)</span><span class="prog-count" id="p0r-count">0 / 25</span></div><div class="prog-track"><div class="prog-fill" id="p0r-fill"></div></div></div>
+        <div class="or-divider">-- OR --</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Workshop (400ml)</span><span class="prog-count" id="p0w-count">0 / 10</span></div><div class="prog-track"><div class="prog-fill" id="p0w-fill"></div></div></div>
+      </div>
+      <div class="tier-card t1" id="card1">
+        <div class="tier-card-header"><div class="tier-card-label">R1</div><div class="checkmark">&#10003;</div></div>
+        <div class="tier-card-roi">30% ROI / Mark-up</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Retail (100ml)</span><span class="prog-count" id="p1r-count">0 / 50</span></div><div class="prog-track"><div class="prog-fill" id="p1r-fill"></div></div></div>
+        <div class="or-divider">-- OR --</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Workshop (400ml)</span><span class="prog-count" id="p1w-count">0 / 20</span></div><div class="prog-track"><div class="prog-fill" id="p1w-fill"></div></div></div>
+      </div>
+      <div class="tier-card t2" id="card2">
+        <div class="tier-card-header"><div class="tier-card-label">R2</div><div class="checkmark">&#10003;</div></div>
+        <div class="tier-card-roi">35% ROI / Mark-up</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Retail (100ml)</span><span class="prog-count" id="p2r-count">0 / 100</span></div><div class="prog-track"><div class="prog-fill" id="p2r-fill"></div></div></div>
+        <div class="or-divider">-- OR --</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Workshop (400ml)</span><span class="prog-count" id="p2w-count">0 / 40</span></div><div class="prog-track"><div class="prog-fill" id="p2w-fill"></div></div></div>
+      </div>
+      <div class="tier-card t3" id="card3">
+        <div class="tier-card-header"><div class="tier-card-label">R3</div><div class="checkmark">&#10003;</div></div>
+        <div class="tier-card-roi">40% ROI / Mark-up</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Retail (100ml)</span><span class="prog-count" id="p3r-count">0 / 250</span></div><div class="prog-track"><div class="prog-fill" id="p3r-fill"></div></div></div>
+        <div class="or-divider">-- OR --</div>
+        <div class="prog-row"><div class="prog-meta"><span class="prog-label">Workshop (400ml)</span><span class="prog-count" id="p3w-count">0 / 100</span></div><div class="prog-track"><div class="prog-fill" id="p3w-fill"></div></div></div>
+      </div>
+    </div>
+    <div class="next-tier-hint" id="nextTierHint"></div>
+  </div>
+
+  <div class="section-title">Products &amp; Quantities</div>
+  <div class="product-table-wrap">
+    <table>
+      <thead><tr>
+        <th>SKU</th><th>Product</th>
+        <th class="num">MRP (Rs.)</th><th class="num">DP (Rs.)</th>
+        <th class="num">Qty</th><th class="num">Subtotal (Rs.)</th>
+      </tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="summary-box">
+    <div class="summary-item"><div class="lbl">Retail Units</div><div class="val w" id="sumRetail">0</div></div>
+    <div class="summary-item"><div class="lbl">Workshop Units</div><div class="val w" id="sumWorkshop">0</div></div>
+    <div class="summary-item"><div class="lbl">Order Value (excl GST)</div><div class="val" id="totalDP">Rs.0</div></div>
+    <div class="summary-item"><div class="lbl">GST @18%</div><div class="val w" id="totalGST">Rs.0</div></div>
+    <div class="summary-item"><div class="lbl">Shipping</div><div class="val w" id="shippingFee">Rs.100</div><div class="note" id="shippingNote">Order &lt;Rs.5000</div></div>
+    <div class="summary-item"><div class="lbl">Total Payable (incl GST)</div><div class="val" id="grandTotal">Rs.0</div></div>
+  </div>
+
+  <div class="warning-msg" id="warningMsg"></div>
+
+  <div class="terms">
+    <strong>Terms &amp; Conditions:</strong>
+    <ol>
+      <li>All DP rates are exclusive of GST @18%</li>
+      <li>Shipping Fee of Rs.100 (excl GST) applicable if total order DP value is &lt;Rs.5000</li>
+      <li>ROI is also Mark-Up Margin on DP. If either Retail OR Workshop MOQ is fulfilled, same slab applies to entire order.</li>
+      <li>Orders dispatched within 5-7 business days of full payment (FIFO basis)</li>
+      <li>All MRPs and DPs valid till end of current month</li>
+    </ol>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="placePurchaseOrder()">
+    <span id="btnText">&#128230; Place Purchase Order</span>
+    <div class="spinner" id="btnSpinner"></div>
+  </button>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="icon">&#9989;</div>
+    <h2>Order Ready!</h2>
+    <div class="po-chip" id="modalPONum"></div>
+    <p id="modalMsg"></p>
+    <ol class="steps" id="modalSteps">
+      <li>&#128231; Your email client will open with the Purchase Order rendered inside.</li>
+      <li>&#128065; Review the email — it shows the full PO table with all items &amp; totals.</li>
+      <li>&#9989; Hit <strong>Send</strong> to place your order with InTheLOOP Labs.</li>
+    </ol>
+    <div class="btn-row">
+      <button class="preview-btn" onclick="showEmailPreview()">&#128065; Preview Email</button>
+      <button class="close-btn" onclick="openMailtoAndClose()">&#128231; Open in Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL PREVIEW OVERLAY -->
+<div class="email-preview-overlay" id="emailPreviewOverlay">
+  <div class="email-preview-wrap">
+    <button class="email-close-btn" onclick="closePreview()">&#10005; Close Preview</button>
+    <div class="email-chrome">
+      <div class="email-chrome-dot" style="background:#ff5f57"></div>
+      <div class="email-chrome-dot" style="background:#ffbd2e"></div>
+      <div class="email-chrome-dot" style="background:#28c840"></div>
+      <div class="email-chrome-title" id="previewSubject">Purchase Order — motoDP</div>
+    </div>
+    <div class="email-body-wrap">
+      <div id="emailPreviewContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── APPS SCRIPT WEB APP URL — paste yours here after deploying ────────────
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzScg6Tfn7GkAJxqWtY02Ph6PICdTwdoYBwaAZxTlPdK4-GmK-rz89J5G8IKBrJNEnD-Q/exec';
+// ─────────────────────────────────────────────────────────────────────────
+
+// ── VALIDITY ──────────────────────────────────────────────────────────────
+function getLastDay() {
+  var n = new Date(), last = new Date(n.getFullYear(), n.getMonth()+1, 0);
+  return last.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+}
+var VALIDITY_DATE = getLastDay();
+document.getElementById('validityHeader').textContent = 'Valid till ' + VALIDITY_DATE;
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+var products = [
+  {sku:'MCC100',  name:'Ceramic Coat Clear',   cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'MCL100',  name:'Ceramic Coat Liquid',  cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'MCLD100', name:'Ceramic Coat LD',      cat:'RETAIL',   mrp:330, dp:[224,216,208,200]},
+  {sku:'RST100',  name:'Rust Remover',         cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'QKY100',  name:'Quick Detailer',       cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'DSK100',  name:'Disk Cleaner',         cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'SQK100',  name:'Squeaky Clean',        cat:'RETAIL',   mrp:220, dp:[150,144,139,134]},
+  {sku:'MCC400',  name:'Ceramic Coat Clear',   cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'MCL400',  name:'Ceramic Coat Liquid',  cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'MCLD400', name:'Ceramic Coat LD',      cat:'WORKSHOP', mrp:880, dp:[597,574,553,533]},
+  {sku:'RST400',  name:'Rust Remover',         cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'QKY400',  name:'Quick Detailer',       cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'DSK400',  name:'Disk Cleaner',         cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'SQK400',  name:'Squeaky Clean',        cat:'WORKSHOP', mrp:550, dp:[373,359,346,333]},
+  {sku:'BTC500',  name:'Bike Top Coat 500',    cat:'WORKSHOP', mrp:660, dp:[448,431,415,400]},
+  {sku:'TBC500',  name:'Total Bike Clean 500', cat:'WORKSHOP', mrp:660, dp:[448,431,415,400]}
+];
+var RETAIL_MOQ=[25,50,100,250], WORKSHOP_MOQ=[10,20,40,100];
+var TIER_META=[
+  {label:'R0 - 25% ROI',bg:'#CBD5E0',color:'#2D3748'},
+  {label:'R1 - 30% ROI',bg:'#68D391',color:'#22543D'},
+  {label:'R2 - 35% ROI',bg:'#63B3ED',color:'#1A365D'},
+  {label:'R3 - 40% ROI',bg:'#B794F4',color:'#44337A'}
+];
+var quantities={}, currentTier=0;
+var resolvedCity='', resolvedState='';
+var lastMailtoLink='', lastEmailHTML='', lastPONo='', lastSubject='';
+
+// ── TIER LOGIC ────────────────────────────────────────────────────────────
+function calcTotals(){
+  var r=0,w=0;
+  products.forEach(function(p){var q=quantities[p.sku]||0; if(p.cat==='RETAIL')r+=q; else w+=q;});
+  return {retail:r, workshop:w};
+}
+function determineTier(r,w){
+  var t=0;
+  for(var i=0;i<=3;i++){if(r>=RETAIL_MOQ[i]||w>=WORKSHOP_MOQ[i])t=i;}
+  return t;
+}
+function recalcAll(){
+  var tot=calcTotals(), nt=determineTier(tot.retail,tot.workshop);
+  var changed=(nt!==currentTier); currentTier=nt;
+  updateTierPanel(tot.retail,tot.workshop);
+  if(changed)flashDP();
+  refreshDP();
+  updateSummary(tot.retail,tot.workshop);
+}
+function updateTierPanel(r,w){
+  for(var t=0;t<=3;t++){
+    document.getElementById('card'+t).classList.toggle('active-card',t===currentTier);
+    var rM=RETAIL_MOQ[t],wM=WORKSHOP_MOQ[t];
+    var rf=document.getElementById('p'+t+'r-fill'), wf=document.getElementById('p'+t+'w-fill');
+    rf.style.width=Math.min(100,(r/rM)*100)+'%'; rf.className='prog-fill'+(r>=rM?' done':'');
+    wf.style.width=Math.min(100,(w/wM)*100)+'%'; wf.className='prog-fill'+(w>=wM?' done':'');
+    document.getElementById('p'+t+'r-count').textContent=r+' / '+rM;
+    document.getElementById('p'+t+'w-count').textContent=w+' / '+wM;
+  }
+  var m=TIER_META[currentTier], b=document.getElementById('activeTierBadge');
+  b.textContent=m.label; b.style.background=m.bg; b.style.color=m.color;
+  var hint=document.getElementById('nextTierHint');
+  if(currentTier<3){
+    var nt=currentTier+1, rN=Math.max(0,RETAIL_MOQ[nt]-r), wN=Math.max(0,WORKSHOP_MOQ[nt]-w);
+    var roi=['','30%','35%','40%'][nt];
+    var msg='<strong>Unlock R'+nt+' ('+roi+' ROI):</strong> ';
+    if(rN===0)msg+='Retail MOQ met! Any Workshop qty unlocks R'+nt+' rates.';
+    else if(wN===0)msg+='Workshop MOQ met! Any Retail qty unlocks R'+nt+' rates.';
+    else msg+='Add <strong>'+rN+'</strong> more Retail <em>OR</em> <strong>'+wN+'</strong> more Workshop units.';
+    hint.innerHTML=msg; hint.style.display='block';
+  } else { hint.style.display='none'; }
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────
+function renderTable(){
+  var body=document.getElementById('tableBody'); body.innerHTML='';
+  var catLabels={RETAIL:'RETAIL (100ML)',WORKSHOP:'WORKSHOP (400ML)'}, lastCat='';
+  products.forEach(function(p){
+    if(p.cat!==lastCat){
+      lastCat=p.cat;
+      var r=document.createElement('tr'); r.className='cat-row';
+      r.innerHTML='<td colspan="6">'+catLabels[p.cat]+'</td>'; body.appendChild(r);
+    }
+    var row=document.createElement('tr');
+    row.innerHTML='<td class="sku">'+p.sku+'</td><td>'+p.name+'</td><td class="mrp">Rs.'+p.mrp+'</td>'
+      +'<td class="dp" id="dp_'+p.sku+'">Rs.'+p.dp[currentTier]+'</td>'
+      +'<td><input class="qty-input" type="number" min="0" step="1" value="" placeholder="0" oninput="onQty(\''+p.sku+'\',this.value)"></td>'
+      +'<td class="subtotal" id="sub_'+p.sku+'">--</td>';
+    body.appendChild(row);
+  });
+}
+function onQty(sku,val){ quantities[sku]=Math.max(0,parseInt(val)||0); recalcAll(); }
+function flashDP(){
+  products.forEach(function(p){
+    var c=document.getElementById('dp_'+p.sku); if(!c)return;
+    c.classList.remove('dp-flash'); void c.offsetWidth; c.classList.add('dp-flash');
+  });
+}
+function refreshDP(){
+  products.forEach(function(p){
+    var q=quantities[p.sku]||0;
+    var dc=document.getElementById('dp_'+p.sku), sc=document.getElementById('sub_'+p.sku); if(!dc)return;
+    dc.textContent='Rs.'+p.dp[currentTier];
+    sc.textContent=q>0?'Rs.'+(q*p.dp[currentTier]).toLocaleString('en-IN'):'--';
+  });
+}
+function updateSummary(r,w){
+  var dp=0; products.forEach(function(p){dp+=(quantities[p.sku]||0)*p.dp[currentTier];});
+  var gst=Math.round(dp*0.18), ship=dp<5000?100:0, sg=Math.round(ship*0.18), grand=dp+gst+ship+sg;
+  document.getElementById('sumRetail').textContent=r;
+  document.getElementById('sumWorkshop').textContent=w;
+  document.getElementById('totalDP').textContent='Rs.'+dp.toLocaleString('en-IN');
+  document.getElementById('totalGST').textContent='Rs.'+gst.toLocaleString('en-IN');
+  document.getElementById('shippingFee').textContent=ship>0?'Rs.100':'FREE';
+  document.getElementById('shippingNote').textContent=ship>0?'Order <Rs.5000':'Order >=Rs.5000';
+  document.getElementById('grandTotal').textContent='Rs.'+grand.toLocaleString('en-IN');
+}
+
+// ── PIN LOOKUP ────────────────────────────────────────────────────────────
+var pinTimer=null;
+function lookupPin(pin){
+  clearTimeout(pinTimer); resolvedCity=''; resolvedState='';
+  if(pin.length!==6)return;
+  pinTimer=setTimeout(function(){
+    fetch('https://api.postalpincode.in/pincode/'+pin)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d[0].Status==='Success'){
+          resolvedCity=d[0].PostOffice[0].District;
+          resolvedState=d[0].PostOffice[0].State;
+        }
+      }).catch(function(){});
+  },600);
+}
+
+// ── VALIDATION ────────────────────────────────────────────────────────────
+function validate(){
+  var n=document.getElementById('personName').value.trim();
+  var s=document.getElementById('storeName').value.trim();
+  var w=document.getElementById('whatsapp').value.trim();
+  var p=document.getElementById('pincode').value.trim();
+  if(!n||!s||!w||!p)return'Please fill in all customer details.';
+  if(!/^\d{10}$/.test(w))return'WhatsApp number must be 10 digits.';
+  if(!/^\d{6}$/.test(p))return'PIN code must be 6 digits.';
+  if(Object.values(quantities).reduce(function(a,b){return a+b;},0)===0)return'Please add at least one product.';
+  return null;
+}
+
+// ── BUILD ORDER DATA ──────────────────────────────────────────────────────
+function buildData(){
+  var n=document.getElementById('personName').value.trim();
+  var s=document.getElementById('storeName').value.trim();
+  var wa=document.getElementById('whatsapp').value.trim();
+  var pin=document.getElementById('pincode').value.trim();
+  var today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  var poNo='PO-'+Date.now().toString().slice(-8);
+  var tl=['R0 - 25% ROI','R1 - 30% ROI','R2 - 35% ROI','R3 - 40% ROI'][currentTier];
+  var tot=calcTotals(), items=[], dp=0;
+  products.forEach(function(p){
+    var q=quantities[p.sku]||0; if(!q)return;
+    var sub=q*p.dp[currentTier]; dp+=sub;
+    items.push({sku:p.sku,name:p.name,cat:p.cat,mrp:p.mrp,dp:p.dp[currentTier],qty:q,sub:sub});
+  });
+  var gst=Math.round(dp*0.18), ship=dp<5000?100:0, sg=Math.round(ship*0.18), grand=dp+gst+ship+sg;
+  var addr=[pin, resolvedCity, resolvedState, 'India'].filter(Boolean).join(', ');
+  return {name:n,store:s,wa:wa,pin:pin,city:resolvedCity,state:resolvedState,addr:addr,
+    today:today,validTill:VALIDITY_DATE,poNo:poNo,tierLabel:tl,items:items,totalDP:dp,gst:gst,
+    ship:ship,shipGST:sg,grand:grand,retail:tot.retail,workshop:tot.workshop};
+}
+
+// ── BUILD HTML EMAIL ──────────────────────────────────────────────────────
+function buildEmailHTML(d) {
+  // Tier badge colors (email-safe)
+  var tierBg  = ['#A0AEC0','#68D391','#63B3ED','#B794F4'][currentTier];
+  var tierTxt = ['#2D3748','#22543D','#1A365D','#44337A'][currentTier];
+
+  // Build item rows HTML — group by category
+  var itemRowsHTML = '';
+  var lastCat = '';
+  d.items.forEach(function(item) {
+    if (item.cat !== lastCat) {
+      lastCat = item.cat;
+      var catLabel = item.cat === 'RETAIL' ? 'RETAIL (100ML)' : 'WORKSHOP (400ML)';
+      itemRowsHTML +=
+        '<tr>' +
+          '<td colspan="5" style="background:#F5C800;padding:7px 14px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#1A1A1A;">' +
+            catLabel +
+          '</td>' +
+        '</tr>';
+    }
+    itemRowsHTML +=
+      '<tr style="border-bottom:1px solid #EEEDE8;">' +
+        '<td style="padding:9px 14px;font-family:\'Courier New\',monospace;font-size:13px;font-weight:700;color:#1A1A1A;white-space:nowrap;">' + item.sku + '</td>' +
+        '<td style="padding:9px 14px;font-family:Arial,sans-serif;font-size:13px;color:#333;">' + item.name + '</td>' +
+        '<td style="padding:9px 14px;font-family:Arial,sans-serif;font-size:12px;color:#888;text-align:right;">' + item.qty + '</td>' +
+        '<td style="padding:9px 14px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#2D7A3A;text-align:right;">Rs.' + item.dp + '</td>' +
+        '<td style="padding:9px 14px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#1A1A1A;text-align:right;">Rs.' + item.sub.toLocaleString('en-IN') + '</td>' +
+      '</tr>';
+  });
+
+  // Totals rows
+  var totalsHTML =
+    '<tr>' +
+      '<td colspan="4" style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#666;text-align:right;">Order Value (excl GST)</td>' +
+      '<td style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#1A1A1A;text-align:right;">Rs.' + d.totalDP.toLocaleString('en-IN') + '</td>' +
+    '</tr>' +
+    '<tr>' +
+      '<td colspan="4" style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#666;text-align:right;">GST @18%</td>' +
+      '<td style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#555;text-align:right;">Rs.' + d.gst.toLocaleString('en-IN') + '</td>' +
+    '</tr>';
+  if (d.ship > 0) {
+    totalsHTML +=
+      '<tr>' +
+        '<td colspan="4" style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#666;text-align:right;">Shipping (excl GST)</td>' +
+        '<td style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#555;text-align:right;">Rs.100</td>' +
+      '</tr>' +
+      '<tr>' +
+        '<td colspan="4" style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#666;text-align:right;">Shipping GST @18%</td>' +
+        '<td style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#555;text-align:right;">Rs.' + d.shipGST + '</td>' +
+      '</tr>';
+  } else {
+    totalsHTML +=
+      '<tr>' +
+        '<td colspan="4" style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#666;text-align:right;">Shipping</td>' +
+        '<td style="padding:7px 14px;font-family:Arial,sans-serif;font-size:12px;color:#2D7A3A;font-weight:700;text-align:right;">FREE</td>' +
+      '</tr>';
+  }
+  totalsHTML +=
+    '<tr style="background:#1A1A1A;">' +
+      '<td colspan="4" style="padding:11px 14px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#F5C800;text-align:right;letter-spacing:1px;">TOTAL PAYABLE</td>' +
+      '<td style="padding:11px 14px;font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#F5C800;text-align:right;">Rs.' + d.grand.toLocaleString('en-IN') + '</td>' +
+    '</tr>';
+
+  var html =
+'<!DOCTYPE html>' +
+'<html>' +
+'<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Purchase Order ' + d.poNo + '</title></head>' +
+'<body style="margin:0;padding:0;background:#F0EEEA;font-family:Arial,sans-serif;">' +
+
+'<table width="100%" cellpadding="0" cellspacing="0" style="background:#F0EEEA;padding:24px 0;">' +
+'<tr><td align="center">' +
+
+'<table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">' +
+
+  // ── HEADER ──
+  '<tr>' +
+    '<td style="background:#1A1A1A;padding:22px 28px;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0">' +
+        '<tr>' +
+          '<td style="font-family:Arial,sans-serif;">' +
+            '<span style="font-size:24px;font-weight:900;color:#ffffff;letter-spacing:1px;">moto</span>' +
+            '<span style="font-size:24px;font-weight:900;color:#F5C800;letter-spacing:1px;">DP</span>' +
+            '<span style="font-size:11px;color:#888888;margin-left:10px;letter-spacing:2px;text-transform:uppercase;">RT &amp; WS</span>' +
+          '</td>' +
+          '<td align="right">' +
+            '<span style="font-size:13px;font-weight:700;color:#ffffff;">InTheLOOP Labs Pvt Ltd</span><br>' +
+            '<span style="font-size:11px;color:#888888;">Mysore, Karnataka &nbsp;|&nbsp; 9403893800</span>' +
+          '</td>' +
+        '</tr>' +
+      '</table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── YELLOW STRIP ──
+  '<tr>' +
+    '<td style="background:#F5C800;padding:8px 28px;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:#1A1A1A;text-transform:uppercase;">PURCHASE ORDER</td>' +
+        '<td align="right" style="font-family:Arial,sans-serif;font-size:11px;color:#444;">Valid till ' + VALIDITY_DATE + '</td>' +
+      '</tr></table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── PO META ──
+  '<tr>' +
+    '<td style="background:#F8F7F2;padding:14px 28px;border-bottom:1px solid #E0DDD4;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td>' +
+          '<span style="font-family:\'Courier New\',monospace;font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:2px;">' + d.poNo + '</span><br>' +
+          '<span style="font-family:Arial,sans-serif;font-size:11px;color:#888;">Date: ' + d.today + '&nbsp;&nbsp;|&nbsp;&nbsp;Tier: ' + d.tierLabel + '</span>' +
+        '</td>' +
+        '<td align="right">' +
+          '<span style="display:inline-block;background:' + tierBg + ';color:' + tierTxt + ';font-family:Arial,sans-serif;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:1px;">' + d.tierLabel + '</span>' +
+        '</td>' +
+      '</tr></table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── FROM / TO ──
+  '<tr>' +
+    '<td style="padding:0;border-bottom:1px solid #E0DDD4;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td width="50%" style="padding:16px 28px;border-right:1px solid #E0DDD4;vertical-align:top;">' +
+          '<div style="font-family:Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#999;text-transform:uppercase;margin-bottom:6px;">SUPPLIER</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:3px;">InTheLOOP Labs Pvt Ltd</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:12px;color:#666;">Mysore, Karnataka, India</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:12px;color:#666;">Ph: 9403893800</div>' +
+        '</td>' +
+        '<td width="50%" style="padding:16px 28px;vertical-align:top;background:#F0F8FF;">' +
+          '<div style="font-family:Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#999;text-transform:uppercase;margin-bottom:6px;">BUYER</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:3px;">' + d.store + '</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:12px;color:#666;">Attn: ' + d.name + '</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:12px;color:#666;">WhatsApp: +91 ' + d.wa + '</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:12px;color:#666;">' + d.addr + '</div>' +
+        '</td>' +
+      '</tr></table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── ITEMS TABLE ──
+  '<tr>' +
+    '<td style="padding:0;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">' +
+        '<thead>' +
+          '<tr style="background:#1A1A1A;">' +
+            '<th style="padding:10px 14px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-align:left;text-transform:uppercase;">SKU</th>' +
+            '<th style="padding:10px 14px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-align:left;text-transform:uppercase;">Product</th>' +
+            '<th style="padding:10px 14px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-align:right;text-transform:uppercase;">Qty</th>' +
+            '<th style="padding:10px 14px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#F5C800;text-align:right;text-transform:uppercase;">DP (Rs.)</th>' +
+            '<th style="padding:10px 14px;font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffffff;text-align:right;text-transform:uppercase;">Subtotal</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' +
+          itemRowsHTML +
+          '<tr style="background:#F8F7F2;"><td colspan="5" style="padding:1px 0;"></td></tr>' +
+          totalsHTML +
+        '</tbody>' +
+      '</table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── UNIT SUMMARY ──
+  '<tr>' +
+    '<td style="padding:12px 28px;background:#F8F7F2;border-top:1px solid #E0DDD4;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td style="font-family:Arial,sans-serif;font-size:11px;color:#888;">' +
+          'Retail units ordered: <strong style="color:#333;">' + d.retail + '</strong>' +
+          '&nbsp;&nbsp;|&nbsp;&nbsp;Workshop units ordered: <strong style="color:#333;">' + d.workshop + '</strong>' +
+        '</td>' +
+      '</tr></table>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── TERMS ──
+  '<tr>' +
+    '<td style="padding:16px 28px;background:#ffffff;border-top:1px solid #E0DDD4;">' +
+      '<div style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:#999;text-transform:uppercase;margin-bottom:8px;">Terms &amp; Conditions</div>' +
+      '<div style="font-family:Arial,sans-serif;font-size:11px;color:#999;line-height:1.8;">' +
+        '1. All DP rates exclusive of GST @18%<br>' +
+        '2. Shipping Rs.100 + GST if order value &lt; Rs.5000<br>' +
+        '3. Either Retail or Workshop MOQ qualifies entire order for the slab rate<br>' +
+        '4. Dispatched within 5&ndash;7 business days of full payment (FIFO)<br>' +
+        '5. Prices valid till ' + VALIDITY_DATE +
+      '</div>' +
+    '</td>' +
+  '</tr>' +
+
+  // ── FOOTER ──
+  '<tr>' +
+    '<td style="background:#1A1A1A;padding:14px 28px;text-align:center;">' +
+      '<span style="font-family:Arial,sans-serif;font-size:11px;color:#666;">InTheLOOP Labs Pvt Ltd &nbsp;&middot;&nbsp; Mysore, Karnataka, India &nbsp;&middot;&nbsp; 9403893800</span>' +
+    '</td>' +
+  '</tr>' +
+
+'</table>' + // inner table
+'</td></tr></table>' + // outer table
+'</body></html>';
+
+  return html;
+}
+
+// ── PLACE ORDER ───────────────────────────────────────────────────────────
+function placePurchaseOrder() {
+  var err = validate();
+  var warn = document.getElementById('warningMsg');
+  if (err) {
+    warn.textContent = '⚠️ ' + err;
+    warn.style.display = 'block';
+    warn.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  warn.style.display = 'none';
+
+  var btn = document.getElementById('submitBtn');
+  var btnText = document.getElementById('btnText');
+  var spinner = document.getElementById('btnSpinner');
+
+  btnText.textContent = 'Sending Order...';
+  spinner.style.display = 'block';
+  btn.disabled = true;
+
+  var data = buildData();
+
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+    warn.textContent = '⚠️ Please paste your Apps Script Web App URL into the APPS_SCRIPT_URL variable.';
+    warn.style.display = 'block';
+    spinner.style.display = 'none';
+    btn.disabled = false;
+    btnText.innerHTML = '📦 Place Purchase Order';
+    return;
+  }
+
+  // Apps Script blocks CORS, so we use no-cors (fire-and-forget)
+  // We assume success after 4s if no network error
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(data)
+  })
+  .then(function() {
+    spinner.style.display = 'none';
+    btn.style.background = '#22543D';
+    btn.style.color = '#ffffff';
+    btnText.innerHTML = '✓ Order Sent! &nbsp;&nbsp;' + data.poNo;
+    warn.style.display = 'none';
+    setTimeout(function() {
+      btn.style.background = '';
+      btn.style.color = '';
+      btnText.innerHTML = '📦 Place Purchase Order';
+      btn.disabled = false;
+    }, 6000);
+  })
+  .catch(function() {
+    spinner.style.display = 'none';
+    btn.disabled = false;
+    btnText.innerHTML = '📦 Place Purchase Order';
+    warn.textContent = '⚠️ Could not reach server. Check internet connection and try again.';
+    warn.style.display = 'block';
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderTable();
+recalcAll();
+</script>
+</body>
+</html>
